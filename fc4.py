@@ -32,17 +32,20 @@ def test(name, ckpt, image_pack_name=None, output_filename=None):
     external_image = image_pack_name.index('.') != -1
   except:
     external_image = None
+
   if image_pack_name is None:
     data = None
   elif not external_image:
     print("Loading image pack {}".format(image_pack_name))
     data = load_data(image_pack_name.split(','))
+
   with get_session() as sess:
     fcn = FCN(sess=sess, name=name)
     if ckpt != "-1":
       fcn.load(ckpt)
     else:
       fcn.load_absolute(name)
+
     if not external_image:
       errors, _, _, _, ret, conf = fcn.test(
           scales=[0.5],
@@ -69,7 +72,7 @@ def test(name, ckpt, image_pack_name=None, output_filename=None):
       # reverse gamma correction for sRGB
       img = (img / 255.0) ** 2.2 * 65536
       images = [img]
-      fcn.test_external(images=images, fns=[image_pack_name])
+      fcn.test_external(images=images, fns=[image_pack_name], show=False)
 
 
 def test_input_gamma(name,
