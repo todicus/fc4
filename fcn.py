@@ -736,8 +736,6 @@ class FCN:
       if show:
         cv2.imshow("corrected", corrected)
         cv2.waitKey(0)
-      
-      print("saving {}".format(filename))
       cv2.imwrite('cc_outputs/corrected_%s' % filename, corrected * 255.0)
       
     return illums, confidence_maps
