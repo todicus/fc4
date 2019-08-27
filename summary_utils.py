@@ -173,7 +173,7 @@ def get_visualization(images, illums_est, illums_pooled, illums_ground,
             values=visualization[i * images_per_line:(i + 1
                                                      ) * images_per_line]))
   visualization = tf.maximum(0.0, tf.concat(axis=1, values=visualization_lines))
-  print 'visualization shape', visualization.shape
+  #print 'visualization shape', visualization.shape
 
   return visualization
 
