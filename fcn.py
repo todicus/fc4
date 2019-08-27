@@ -672,7 +672,7 @@ class FCN:
   # without ground truth
   # images are BGR
   # TODO: move network creation here
-  def test_external(self, images, scale=1.0, fns=None, show=True, write=True):
+  def test_external(self, images, scale=1.0, fns=None, show=True, write=False, write_compare=False):
     illums = []
     confidence_maps = []
     for img, filename in zip(images, fns):
@@ -715,8 +715,10 @@ class FCN:
       confidences = np.linalg.norm(pixels, axis=2)
       confidence_maps.append(confidences)
       ind = int(confidences.flatten().shape[0] * 0.95)
-      print(confidences.mean(), confidences.max(),
-            sorted(confidences.flatten())[ind])
+      print("Confidence: {:0.1f} mean, {:0.1f} max, {:0.1f} 95%".format(
+        confidences.mean(),
+        confidences.max(),
+        sorted(confidences.flatten())[ind]))
       merged = merged[0]
       illums.append(est)
 
@@ -728,16 +730,25 @@ class FCN:
       if write:
         cv2.imwrite('/data/common/outputs/%s' % filename,
                     merged[:, :, ::-1] * 255.0)
+
       try:
         os.makedirs('cc_outputs')
       except:
         pass
+
       corrected = np.power(img[:,:,::-1] / 65535 / est[None, None, :] * np.mean(est), 1/2.2)[:,:,::-1]
       if show:
         cv2.imshow("corrected", corrected)
         cv2.waitKey(0)
-      cv2.imwrite('cc_outputs/corrected_%s' % filename, corrected * 255.0)
-      
+
+      corrected = corrected * 255.0
+      output_img = corrected
+      if write_compare:
+        orig_img = np.power(img / 65535, 1/2.2) * 255
+        output_img = np.concatenate((orig_img, corrected), axis=1)
+
+      cv2.imwrite('cc_outputs/corrected_%s' % filename, output_img)      
+
     return illums, confidence_maps
 
   # Test how the network performs, if we just resize the image to fix the network input.
