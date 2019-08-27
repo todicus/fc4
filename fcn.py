@@ -63,7 +63,7 @@ class FCN:
 
   # images: 0-65535 linear RGB
   @staticmethod
-  def build_branches(images, dropout):
+  def build_branches(images, dropout, verbose=False):
     images = tf.clip_by_value(images, 0.0, 65535.0)
     if USE_SHORTCUT:
       # Apply grey-world first
@@ -97,12 +97,14 @@ class FCN:
       feed_to_fc.append(shallow_outputs)
 
     feed_to_fc = tf.concat(axis=3, values=feed_to_fc)
-    print('Feed to FC shape', feed_to_fc.get_shape())
+    if verbose:
+      print('Feed to FC shape', feed_to_fc.get_shape())
 
     # The FC1 here is actually a convolutional layer, since we use FCN
     fc1 = slim.conv2d(
         feed_to_fc, FC1_SIZE, [FC1_KERNEL_SIZE, FC1_KERNEL_SIZE], scope='fc1')
-    print('FC1 shape', fc1.get_shape())
+    if verbose:
+      print('FC1 shape', fc1.get_shape())
     # Use dropout, training time only
     fc1 = slim.dropout(fc1, dropout)
 
@@ -118,26 +120,31 @@ class FCN:
       fc2 = slim.conv2d(fc1, 3, [1, 1], scope='fc2', activation_fn=None)
     else:
       # Way 1
-      print("Using sperate fc2")
+      if verbose:
+        print("Using sperate fc2")
       fc2_mid = slim.conv2d(fc1, 4, [1, 1], scope='fc2', activation_fn=None)
       fc2_mid = tf.nn.relu(fc2_mid)
       rgb = tf.nn.l2_normalize(fc2_mid[:, :, :, :3], 3)
       w, h = map(int, fc2_mid.get_shape()[1:3])
-      print(w, h)
+      if verbose:
+        print(w, h)
       confidence = fc2_mid[:, :, :, 3:4]
       confidence = tf.reshape(confidence, shape=[-1, w * h])
-      print(confidence.get_shape())
+      if verbose:
+        print(confidence.get_shape())
       confidence = tf.nn.softmax(confidence)
       confidence = tf.reshape(confidence, shape=[-1, w, h, 1])
       fc2 = rgb * confidence
-
-    print('FC2 shape', fc2.get_shape())
+    
+    if verbose:
+      print('FC2 shape', fc2.get_shape())
     if USE_SHORTCUT:
       fc2 = fc2 * image_mean[:, :, :, ::-1]
     if not WEIGHTED_POOLING:
       # Simply average pooling
       fc2 = tf.nn.l2_normalize(fc2, 3)
-    print('FC2 shape', fc2.get_shape())
+    if verbose:
+      print('FC2 shape', fc2.get_shape())
     if FC_POOLING:
       # WEIGHTED_POOLING should be true, since we should not normalize anything before feeding into FC
       assert WEIGHTED_POOLING
@@ -150,7 +157,8 @@ class FCN:
               scope='fc_pooling',
               activation_fn=None,
               padding='VALID'), 3)
-      print('FC2 shape', fc2.get_shape())
+      if verbose:
+        print('FC2 shape', fc2.get_shape())
     return fc2
 
   # Build the network
